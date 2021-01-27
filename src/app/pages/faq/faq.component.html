@@ -1,0 +1,7 @@
+<nz-spin [nzSpinning]="loading">
+  <nz-collapse nzAccordion>
+    <nz-collapse-panel *ngFor="let panel of panels" [nzHeader]="panel.question" [nzActive]="panel.active">
+      <p>{{ panel.answer }}</p>
+    </nz-collapse-panel>
+  </nz-collapse>
+</nz-spin>

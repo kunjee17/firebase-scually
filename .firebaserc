@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "fir-scully": {
+      "hosting": {
+        "FirebaseScully": [
+          "fir-scully"
+        ]
+      }
+    }
+  }
+}
