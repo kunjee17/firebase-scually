@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SubSink } from 'subsink';
 import { FaQ, FaqService } from '../../services/faq.service';
-import { map, take, tap } from 'rxjs/operators';
+import { distinctUntilChanged, map, mergeMap, take, tap } from 'rxjs/operators';
+import { IdleMonitorService, TransferStateService } from '@scullyio/ng-lib';
 
 interface Panel extends FaQ {
   active: boolean;
@@ -10,42 +11,33 @@ interface Panel extends FaQ {
 @Component({
   selector: 'app-faq',
   templateUrl: './faq.component.html',
-  styleUrls: ['./faq.component.less']
+  styleUrls: ['./faq.component.less'],
 })
-export class FaqComponent implements OnInit, OnDestroy {
-  panels: Panel[] = [];
+export class FaqComponent {
   loading = true;
-  subSink = new SubSink();
-  constructor(private faqService: FaqService) { }
-
-  ngOnInit(): void {
-    // Block on isScullyRunning. Bug filed https://github.com/scullyio/scully/issues/1211
-    this.subSink.add(
-      this.faqService.getAll().subscribe(
-        (f) => {
-          this.panels = f.map((x) => ({ active: false, ...x }));
-          this.loading = false;
-        },
-        (error) => {
-          console.error(error);
-          this.loading = false;
-        }
+  panels$ = this.tss
+    .useScullyTransferState(
+      'faq',
+      this.faqService.getAll().pipe(
+        take(1), // as it is hot, we need to take only the first one
+        /**
+         * as firebase runs outside of zone, we need to manually tell Scully the page is "ready"
+         * the setTimeout makes sure Angular has some time to paint the page, before we
+         * will "scrape"
+         */
+        tap(() => setTimeout(() =>this.ims.fireManualMyAppReadyEvent(),10)), //
       )
+    )
+    .pipe(
+      tap(() => (this.loading = false)),
+      /** if you want to subscribe to future updates you can merge the 'hot'
+       * service back in, or use a subject to push to. */
+      // mergeMap(()=> this.faqService.getAll()),
+      map((faq) => faq.map((x) => ({ active: false, ...x } as Panel)))
     );
-
-    // Try Scully as issue comments - Didn't work for me.
-
-    // const faqStream$ = this.faqService.getAll().pipe(
-    //   take(1),
-    //   map((x) => x.map((y) => ({ active: false, ...y }))),
-    //   tap((x) => (this.panels = x))
-    // );
-
-    // this.subSink.add(faqStream$.subscribe());
-  }
-
-  ngOnDestroy(): void {
-    this.subSink.unsubscribe();
-  }
-
+  constructor(
+    private faqService: FaqService,
+    private tss: TransferStateService,
+    private ims: IdleMonitorService
+  ) {}
 }

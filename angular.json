@@ -58,8 +58,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "1000kb",
+                  "maximumError": "2mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -136,5 +136,8 @@
       }
     }
   },
-  "defaultProject": "FirebaseScully"
+  "defaultProject": "FirebaseScully",
+  "cli": {
+    "analytics": "49195880-b4ed-4d95-8d4e-c3f47306f702"
+  }
 }
